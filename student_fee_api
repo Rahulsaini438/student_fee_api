@@ -1,0 +1,130 @@
+@GetMapping("/api/school/details")
+	
+	 public ArrayList schoolDetails() {
+		
+		ArrayList al = new ArrayList();
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			Connection con= DriverManager.getConnection("jdbc:mysql://localhost:3306/school","root","Saini@123");
+			PreparedStatement stmt= con.prepareStatement("select * from schools");
+			ResultSet rs =stmt.executeQuery();
+			
+			while(rs.next()) {
+				Map mp= new HashMap();
+				mp.put("school_id",rs.getInt("school_id"));
+				mp.put("name",rs.getString("name"));
+				mp.put("adress",rs.getString("adress"));
+				al.add(mp);
+			}
+			
+			
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		return al;
+	}
+	
+	
+	@GetMapping("/api/students/details")
+	 public ArrayList studentDetails(int schoolid) {
+		
+		ArrayList al= new ArrayList();
+		
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			Connection con= DriverManager.getConnection("jdbc:mysql://localhost:3306/school","root","Saini@123");
+			PreparedStatement stmt= con.prepareStatement("select * from students where school_id=?");
+			stmt.setInt(1,schoolid);
+			ResultSet rs =stmt.executeQuery();
+			
+			while(rs.next()) {
+				Map mp= new HashMap();
+				mp.put("student_id",rs.getInt("student_id"));
+				mp.put("name",rs.getString("name"));
+				mp.put("school_id",rs.getInt("school_id"));
+				mp.put("amount",rs.getInt("amount"));
+				mp.put("contact",rs.getInt("contact"));
+				mp.put("duedate",rs.getDate("duedate"));
+				al.add(mp);
+			}
+			
+			
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		return al;
+	}
+	
+	
+	@GetMapping("/api/transaction")
+	
+	 public String transaction(int studentid,int amt) {
+		String s="";
+		
+		ArrayList al = new ArrayList();
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			Connection con= DriverManager.getConnection("jdbc:mysql://localhost:3306/school","root","Saini@123");
+			PreparedStatement stmt= con.prepareStatement("select duedate from students where student_id=?");
+			PreparedStatement stmt1= con.prepareStatement("update students set duedate=date_add(?,INTERVAL 60 day) where student_id=?");
+			PreparedStatement stmt2= con.prepareStatement("insert into transactions(student_id,amount,transfer_date,status)"
+					+ "values (?,?,curdate(),'creditor')");
+			stmt.setInt(1,studentid);
+			
+			ResultSet rs =stmt.executeQuery();
+			if(rs.next()){
+			Date d= rs.getDate("duedate");
+			stmt1.setDate(1,d);
+			stmt1.setInt(2,studentid);
+			}
+			int i=stmt1.executeUpdate();
+			if(i>0) {
+				stmt2.setInt(1,studentid);
+				stmt2.setInt(2,amt);
+				int j=stmt2.executeUpdate();
+				return "Transaction suscessfull";
+				
+			}
+			
+			
+			
+			
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		return "there is some error";
+	}
+	
+	
+	@GetMapping("/api/fee/pending")
+	
+	 public ArrayList feePendingStudents() {
+		
+		ArrayList al = new ArrayList();
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			Connection con= DriverManager.getConnection("jdbc:mysql://localhost:3306/school","root","Saini@123");
+			PreparedStatement stmt= con.prepareStatement("select s.student_id,s.name,s.contact,s.duedate from students s left join transactions"
+					+ " t on s.student_id=t.student_id where s.student_id not in(select student_id from transactions)");
+			ResultSet rs =stmt.executeQuery();
+			
+			while(rs.next()) {
+				Map mp= new HashMap();
+				mp.put("student_id",rs.getInt("student_id"));
+				mp.put("name",rs.getString("name"));
+				mp.put("contact",rs.getInt("contact"));
+				mp.put("duedate",rs.getDate("duedate"));
+				
+				al.add(mp);
+			}
+			
+			
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		return al;
+	}
